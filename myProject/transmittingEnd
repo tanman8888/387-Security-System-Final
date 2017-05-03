@@ -1,0 +1,438 @@
+// EVERYTHING WORKS HERE!!!!
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_CAP1188.h>
+#include <VirtualWire.h> //for RF communication
+int transPin = 7;
+// Reset Pin is used for I2C or SPI
+#define CAP1188_RESET  9
+
+// CS pin is used for software or hardware SPI
+#define CAP1188_CS  10
+
+// These are defined for software SPI, for hardware SPI, check your 
+// board's SPI pins in the Arduino documentation
+#define CAP1188_MOSI  11
+#define CAP1188_MISO  12
+#define CAP1188_CLK  13
+int go=0;
+
+const int led=9;
+String knockResponse="nothing";
+// For I2C, connect SDA to your Arduino's SDA pin, SCL to SCL pin
+// On UNO/Duemilanove/etc, SDA == Analog 4, SCL == Analog 5
+// On Leonardo/Micro, SDA == Digital 2, SCL == Digital 3
+// On Mega/ADK/Due, SDA == Digital 20, SCL == Digital 21
+
+// Use I2C, no reset pin!
+Adafruit_CAP1188 cap = Adafruit_CAP1188();
+volatile byte interrupt = 0;
+const int touchLength = 4; //How many knocks are in your secret touch
+const int touchLength2 = 4; //How many knocks are in your secret touch
+const int secretTouch[touchLength] = {1,8,4,2};
+const int userTouch[touchLength2]= {1,1,1,1};
+
+const int touch1 = 1;  // threshold value to decide when the touch is detected
+const int touch2 = 8;  // threshold value to decide when the touch is detected
+const int touch3 = 4;  // threshold value to decide when the touch is detected
+const int touch4 = 2;  // threshold value to decide when the touch is detected
+int touchCounter2=0;
+int touchCounter = 0; //this tracks the correct knocks and allows you to move through the sequence
+int touchReading = 0; // variable to store the value read from the sensor pin
+
+int pass=0;
+int passyaynay=0;
+
+String knockGo;
+const int knockSensor = A0; // the piezo is connected to an analog pin
+const int thresholdHIGH = 4;  // threshold value to decide when the detected knock is hard
+const int thresholdLOW = 1;  // threshold value to decide when the detected knock is soft
+ 
+ 
+const int secretKnockLength = 5; //How many knocks are in your secret knock
+ 
+/* This is the secret knock sequence
+ * 0 represents a soft knock
+ * 1 represents a hard knock */
+const int secretKnock[secretKnockLength] = {0, 0,1,1,0};
+ 
+int secretCounter = 0; //this tracks the correct knocks
+int sensorReading = 0; //store sthe value from the piezo
+
+const int tiltSensor = 2; // the piezo is connected to analog pin 0
+
+unsigned long knobTime=0;
+unsigned long last_knobTime=0;
+int openDoor=0;
+// these variables will change:
+int tiltReading=LOW;      // variable to store the value read from the sensor pin
+int tiltState;            // the current reading from the input pin
+int lastTiltState=HIGH; // the previous reading from the input pin
+
+long lastDebounceTime = 0;  // the last time the output pin was toggled
+long debounceDelay = 50;    // the debounce time
+
+int STATE=0;
+int NS=0;
+const int wait=0;
+const int touchPass=1;
+const int in=2;
+const int BREAKIN=3;
+const int knockPass=4;
+const int resetState=5;
+
+void setup() {
+  pinMode(tiltSensor,INPUT);
+attachInterrupt(0, tilt, RISING);
+ Serial.begin(9600);
+    if (!cap.begin()) {
+    Serial.println("CAP1188 not found");
+    while (1);{
+  
+  Serial.println("CAP1188 found!");
+}
+    }
+      vw_set_ptt_inverted(true);
+  vw_setup(2000);
+  vw_set_tx_pin(transPin);
+  analogReference(DEFAULT);//optional,not needed
+}
+
+void loop() {
+
+  stateMachine();
+
+
+}
+
+void stateMachine(){
+    int beingTouched[]={2};  //signal that sends to warn that someone is starting the touch password
+  int beingKnocked[]={3}; //signal that sends to warn that someone is knocking
+  int beingOpened[]={4}; //signal that sends to warn that someone is opening the door with permission
+  int beingRobbed[]={5}; //signal that sends to warn that someone is breaking in
+  int resetSystem[]={6};
+   STATE=NS;
+ switch(STATE){
+  case wait:
+    if(openDoor==1){
+    NS=BREAKIN;
+    openDoor=0;
+    }
+    else if(cap.touched()>=1)
+    NS=touchPass;
+    else if (analogRead(knockSensor)>=1)
+    NS=knockPass;
+    else
+    NS=wait;
+    break;
+  case touchPass:
+    if(openDoor==1)
+    NS=BREAKIN;
+    else if(pass==1){
+    NS=in;
+    pass=0;
+    }
+    else if(pass=2){
+      NS=resetState;
+      pass=0;
+    }
+    else if (analogRead(knockSensor))
+    NS=knockPass;
+    else{
+    NS=wait;
+    pass=0;
+    }
+    break;
+  case knockPass:
+     if(openDoor==1)
+    NS=BREAKIN;
+    else if(cap.touched()>=1)
+    NS=touchPass;
+    else if (knockResponse.equals("OPENDOOR"))
+    NS=in;
+    else
+    NS=wait;
+    break;
+  case BREAKIN:
+   
+    if(touchReading==16){
+      NS=wait;
+    }
+    else
+    NS=BREAKIN;
+    break;
+  case in:
+    NS=in;
+    break;
+   case resetState:
+    NS=wait;
+ }
+ switch(STATE){
+ case wait:
+  Serial.println("wait");
+  break;
+ case touchPass:
+  Serial.println("touch");
+  pass=touchCheck();
+  vw_send((uint8_t*)beingTouched, 1); //sending data through RF transimission (virtualwire function)
+  vw_wait_tx(); //waits until the message is sent (virtualwire function)
+  Serial.println("Sent"); //print "Sent" when the message has been sent
+  blink();
+  delay(500);
+  break;
+ case knockPass:
+    knockResponse=knockCheck();
+    vw_send((uint8_t*)beingKnocked, 1); //sending data through RF transimission (virtualwire function)
+    vw_wait_tx(); //waits until the message is sent (virtualwire function)
+    Serial.println("Sent"); //print "Sent" when the message has been sent
+    blink();
+    delay(500);
+    break;
+ case BREAKIN:
+  touchReading=cap.touched();
+  if(touchReading==16){
+  vw_send((uint8_t*)resetSystem, 1); //sending data through RF transimission (virtualwire function)
+  vw_wait_tx(); //waits until the message is sent (virtualwire function)
+  Serial.println("Sent"); //print "Sent" when the message has been sent
+  blink();
+  }
+  else{
+  Serial.println("Fuckin get this guy");
+  vw_send((uint8_t*)beingRobbed, 1); //sending data through RF transimission (virtualwire function)
+  vw_wait_tx(); //waits until the message is sent (virtualwire function)
+  Serial.println("Sent"); //print "Sent" when the message has been sent
+  blink();
+  }
+  delay(500);
+  break;
+ case in:
+  Serial.println("INNNN");
+    vw_send((uint8_t*)beingOpened, 1); //sending data through RF transimission (virtualwire function)
+  vw_wait_tx(); //waits until the message is sent (virtualwire function)
+  Serial.println("Sent"); //print "Sent" when the message has been sent
+  blink();
+  delay(500);
+  break;
+ case resetState:
+    vw_send((uint8_t*)resetSystem, 1); //sending data through RF transimission (virtualwire function)
+  vw_wait_tx(); //waits until the message is sent (virtualwire function)
+  Serial.println("Sent"); //print "Sent" when the message has been sent
+  blink();
+  delay(500);
+ }
+}
+
+int touchCheck(){
+  touchReading = cap.touched();
+  delay(100);
+  // First determine is knock if Hard (HIGH) or Gentle (LOW)
+
+  //Hard knock (HIGH) is detected
+  if (touchReading==touch1) {
+ 
+    //Check to see if a Hard Knock matches the Secret Knock in the correct sequence.
+    if (secretTouch[touchCounter] == touch1) {
+ 
+      //The Knock was correct, iterate the counter.
+      touchCounter++;
+      Serial.print("Correct");Serial.println(touchReading);
+ 
+    } else {
+ 
+      //The Knock was incorrect, reset the counter
+      touchCounter = 0;
+      Serial.println("Fail - You are a spy!");
+      return(0);
+    }
+  }
+
+    if (touchReading==touch2) {
+ 
+    //Check to see if a Hard Knock matches the Secret Knock in the correct sequence.
+    if (secretTouch[touchCounter] == touch2) {
+ 
+      //The Knock was correct, iterate the counter.
+      touchCounter++;
+      Serial.print(touchReading);
+      Serial.println("Correct");
+ 
+    } else {
+ 
+      //The Knock was incorrect, reset the counter
+      touchCounter = 0;
+       Serial.print(touchReading);
+      Serial.println("Fail - You are a spy!");
+      return(0);
+    }
+     }
+
+    if (touchReading==touch3) {
+ 
+    //Check to see if a Hard Knock matches the Secret Knock in the correct sequence.
+    if (secretTouch[touchCounter] == touch3) {
+ 
+      //The Knock was correct, iterate the counter.
+      touchCounter++;
+       Serial.print(touchReading);
+      Serial.println("Correct");
+ 
+    } else {
+ 
+      //The Knock was incorrect, reset the counter
+      touchCounter = 0;
+       Serial.print(touchReading);
+      Serial.println("Fail - You are a spy!");
+      return(0);
+    }
+     }
+
+
+     if (touchReading==touch4) {
+ 
+    //Check to see if a Hard Knock matches the Secret Knock in the correct sequence.
+    if (secretTouch[touchCounter] == touch4) {
+ 
+      //The Knock was correct, iterate the counter.
+      touchCounter++;
+       Serial.print(touchReading);
+      Serial.println("Correct");
+ 
+    } else {
+ 
+      //The Knock was incorrect, reset the counter
+      touchCounter = 0;
+       Serial.print(touchReading);
+      Serial.println("Fail - You are a spy!");
+      return(0);
+    }
+     }
+  delay(300);
+  //Check for successful entry of the code, by seeing if the entire array has been walked through.
+  if (touchCounter2 == (touchLength) ) {    
+    //Reset the secret counter to 0.
+    Serial.println(touchCounter2);
+    Serial.println("FUCK");
+    touchCounter2 = 0;
+    return(2);
+  }
+
+ // delay(300);
+  //Check for successful entry of the code, by seeing if the entire array has been walked through.
+  if (touchCounter == (touchLength) ) {    
+    //Reset the secret counter to 0.
+    Serial.println(touchCounter);
+    Serial.println("FUCK");
+    touchCounter = 0;
+    return(1);
+  }
+}
+
+String knockCheck(){
+  // read the piezo sensor and store the value in the variable sensorReading:
+  sensorReading = analogRead(knockSensor);
+ // Serial.println(sensorReading);
+  delay(100);
+  // First determine is knock if Hard (HIGH) or Gentle (LOW)
+ 
+  //Hard knock (HIGH) is detected
+  if (sensorReading >= thresholdHIGH) {
+ 
+    //Check to see if a Hard Knock matches the Secret Knock in the correct sequence.
+    if (secretKnock[secretCounter] == 1) {
+ 
+      //The Knock was correct, iterate the counter.
+      secretCounter++;
+      Serial.println("Correct");
+ 
+    } else {
+ 
+      //The Knock was incorrect, reset the counter
+      secretCounter = 0;
+      Serial.println("Fail - You are a spy!");
+    }
+ 
+    //Allow some time to pass before sampling again to ensure a clear signal.
+    delay(100);
+ 
+    //Gentle knock (LOW) is detected
+  } else if (sensorReading >= thresholdLOW) {
+ 
+    //Check to see if a Gentle Knock matches the Secret Knock in the correct sequence.
+    if (secretKnock[secretCounter] == 0) {
+ 
+      //The Knock was correct, iterate the counter.
+      secretCounter++;
+      Serial.println("Correct");
+ 
+    } else {
+ 
+      //The Knock was incorrect, reset the counter.
+      secretCounter = 0;
+      Serial.println("Fail - You are a spy!");
+    }
+ 
+    //Allow some time to pass before sampling again to ensure a clear signal.
+    delay(100);
+ 
+  }
+ 
+  //Check for successful entry of the code, by seeing if the entire array has been walked through.
+  if (secretCounter == (secretKnockLength) ) {    
+    //Reset the secret counter to 0.
+    secretCounter = 0;
+    return("OPENDOOR");
+  }
+}
+
+// Interrupt service routine for interrupt 0
+void tilt() {
+  // read the sensor and store it in the variable sensorReading:
+  tiltReading = digitalRead(tiltSensor);
+  Serial.println(tiltSensor);    
+  // check to see if the sensor was tilted
+  // (i.e. the input went from HIGH to LOW), and you've waited 
+  // long enough since the last change to ignore any noise:  
+ if(knobTime-last_knobTime<=6500){
+  // If the tilt changed, due to noise or tilting: 
+  if (tiltReading != lastTiltState) {
+    // reset the debouncing timer
+    knobTime,lastDebounceTime = millis();
+  } 
+  //Serial.println(knobTime);
+   sensorReading = digitalRead(tiltSensor);  
+   if ((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer
+    // than the debounce delay, so take it as the actual current state:
+    
+    // if the button state has changed:
+    if (tiltReading != tiltState){
+      tiltState = sensorReading;
+      
+    // if the sensor reading is low
+      if (tiltReading == LOW) {
+        // make the status of the ledPin to go on:
+        Serial.println("Sensor tripped!");
+        delay(500);
+        openDoor=1;
+       }
+       else if (tiltReading==HIGH) {
+        Serial.println("false alarm hopefully");
+        delay(100);
+      }
+    }
+  }
+ }
+  lastTiltState = sensorReading;
+  // delay to avoid overloading the serial port buffer:
+  delay(100);
+   // save the reading.
+  last_knobTime = knobTime;
+}
+//blink(): a blink method
+void blink()
+{
+  digitalWrite(led, HIGH);
+  delay(500);
+  digitalWrite(led, LOW);
+  delay(500);
+}
