@@ -254,42 +254,40 @@ void stateMachine(){
 }
 
 int touchCheck(){
-  touchReading = cap.touched();
+  touchReading = cap.touched();  // reads the capacative touch
   //delay(100);
   // First determine is knock if Hard (HIGH) or Gentle (LOW)
 
-  //Hard knock (HIGH) is detected
-  if (touchReading==touch1) {
+  if (touchReading==touch1) { //if its the right touch value
  
-    //Check to see if a Hard Knock matches the Secret Knock in the correct sequence.
-    if (secretTouch[touchCounter] == touch1) {
+    if (secretTouch[touchCounter] == touch1) {  //if the touch value is in the correct order
  
-      //The Knock was correct, iterate the counter.
+      //The touch was correct, iterate the counter.
       touchCounter++;
       Serial.print("Correct");Serial.println(touchReading);
  
     } else {
  
-      //The Knock was incorrect, reset the counter
+      //The touch was incorrect, reset the counter
       touchCounter = 0;
       Serial.println("Fail - You are a spy!");
       return(0);
     }
   }
 
-    if (touchReading==touch2) {
+    if (touchReading==touch2) {  //if its the right touch value
  
-    //Check to see if a Hard Knock matches the Secret Knock in the correct sequence.
+    //Check to see if a touch matches the Secret touch in the correct sequence.
     if (secretTouch[touchCounter] == touch2) {
  
-      //The Knock was correct, iterate the counter.
+      //The touch was correct, iterate the counter.
       touchCounter++;
       Serial.print(touchReading);
       Serial.println("Correct");
  
     } else {
  
-      //The Knock was incorrect, reset the counter
+      //The touch was incorrect, reset the counter
       touchCounter = 0;
        Serial.print(touchReading);
       Serial.println("Fail - You are a spy!");
@@ -299,17 +297,17 @@ int touchCheck(){
 
     if (touchReading==touch3) {
  
-    //Check to see if a Hard Knock matches the Secret Knock in the correct sequence.
+    //Check to see if a touch matches the Secret touch in the correct sequence.
     if (secretTouch[touchCounter] == touch3) {
  
-      //The Knock was correct, iterate the counter.
+      //The touch was correct, iterate the counter.
       touchCounter++;
        Serial.print(touchReading);
       Serial.println("Correct");
  
     } else {
  
-      //The Knock was incorrect, reset the counter
+      //The touch was incorrect, reset the counter
       touchCounter = 0;
        Serial.print(touchReading);
       Serial.println("Fail - You are a spy!");
