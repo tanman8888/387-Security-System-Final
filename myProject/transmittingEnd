@@ -1,4 +1,5 @@
 // EVERYTHING WORKS HERE!!!!
+// The RF code was found from Ian Bakers midterm wiki at: https://github.com/baller4/ECE_387_Midterm_IB
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_CAP1188.h>
