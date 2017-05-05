@@ -1,0 +1,117 @@
+#include <VirtualWire.h> //for RF communication
+#include <SPI.h> //for Digital Potentiometer
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(12,11,10,9,6,5);
+
+const int buzzerPin = 3;
+
+//Iniitializes message which will store data recieved from trasmitter
+byte message[VW_MAX_MESSAGE_LEN];
+//messageLength is to assist in recieving data
+byte messageLength = VW_MAX_MESSAGE_LEN;
+
+const int ledPin = 8; //an LED is used to confirm that a signal has been recieved
+const int recPin = 7; //data line from RF reciever
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(buzzerPin, OUTPUT);
+  //RF Reciever setup, from virtualwire library
+  vw_set_ptt_inverted(true);
+  vw_setup(2000);
+  vw_set_rx_pin(recPin);
+  vw_rx_start();
+  
+  pinMode(ledPin, OUTPUT);
+    lcd.begin(16, 2);
+   
+   lcd.clear();
+   lcd.write("Noone's at");
+   lcd.setCursor(0,1);
+   lcd.write("the door");
+ 
+}
+
+
+void loop() {
+ 
+  if (vw_get_message(message, &messageLength)) //the function "vw_get_message()" verifies a message has been recieved
+                                               // and stores the message in a variable (from virtualwire library)
+  { 
+    for (int i = 0; i < messageLength; i++)//printing data recieved from RF transission
+    {
+      Serial.print(message[i]); //print the message
+      Serial.print(" ");
+      
+      if(message[i] == 2) {
+        touchLCD();
+      }
+      if(message[i] == 3) {
+        knockLCD();
+      //  delay(100);
+      }
+        if(message[i] == 4) {
+        blink();
+        openLCD();
+      //  delay(100);
+      }
+      if(message[i] == 5) {
+        breakInLCD();
+       // delay(100);
+      }
+          if(message[i] == 6) {
+          noTone(buzzerPin);
+          lcd.clear();
+          lcd.print("All good");
+      }
+    }
+    Serial.println("Found"); //"Found" prints if a message was recieved
+  }
+  Serial.println("Loop\n"); //"Loop" prints after a cycle of void loop() is completed
+  delay(500);
+}
+
+void touchLCD() {
+        lcd.clear();
+        blink();
+        lcd.print("Someone's trying");
+        lcd.setCursor(0,1);
+        lcd.print("the touch entry");
+        tone(buzzerPin,20,500);
+}
+
+void knockLCD() {
+        lcd.clear();
+        blink();
+        lcd.clear();
+        lcd.print("Someone's ");
+        lcd.setCursor(0,1);
+        lcd.write("knocking");
+        tone(buzzerPin,200,700);
+}
+
+void openLCD() {
+        lcd.clear();
+        lcd.print("Someone's opened");
+        lcd.setCursor(0,1);
+        lcd.print("the door");
+        tone(buzzerPin,200,50);
+}
+
+void breakInLCD(){
+        blink();
+        lcd.clear();
+        lcd.print("BREAK IN");
+        lcd.setCursor(0,1);
+        tone(buzzerPin,255,1000);
+}
+//blink(): a blink method
+void blink()
+{
+  digitalWrite(ledPin, HIGH);
+  delay(500);
+  digitalWrite(ledPin, LOW);
+  delay(500);
+}
