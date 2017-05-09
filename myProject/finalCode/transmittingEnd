@@ -35,12 +35,12 @@ const int touchLength2 = 4; //How many knocks are in your secret touch
 const int secretTouch[touchLength] = {1,8,4,2};
 const int userTouch[touchLength2]= {1,1,1,1};
 
-const int touch1 = 1;  // threshold value to decide when the touch is detected
-const int touch2 = 8;  // threshold value to decide when the touch is detected
-const int touch3 = 4;  // threshold value to decide when the touch is detected
-const int touch4 = 2;  // threshold value to decide when the touch is detected
+const int touch1 = 1;  // value to decide when the touch is detected
+const int touch2 = 8;  // value to decide when the touch is detected
+const int touch3 = 4;  // value to decide when the touch is detected
+const int touch4 = 2;  // value to decide when the touch is detected
 //int touchCounter2=0;
-int touchCounter = 0; //this tracks the correct knocks and allows you to move through the sequence
+int touchCounter = 0; //this tracks the correct touches and allows you to move through the touch passcode
 int touchReading = 0; // variable to store the value read from the sensor pin
 
 int pass=0;
@@ -257,7 +257,7 @@ void stateMachine(){
 int touchCheck(){
   touchReading = cap.touched();  // reads the capacative touch
   //delay(100);
-  // First determine is knock if Hard (HIGH) or Gentle (LOW)
+  // First determine if the touch value is in the passcode
 
   if (touchReading==touch1) { //if its the right touch value
  
@@ -319,10 +319,10 @@ int touchCheck(){
 
      if (touchReading==touch4) {
  
-    //Check to see if a Hard Knock matches the Secret Knock in the correct sequence.
+    //Check to see if the touch was in the correct sequence.
     if (secretTouch[touchCounter] == touch4) {
  
-      //The Knock was correct, iterate the counter.
+      //The touc was correct, iterate the counter.
       touchCounter++;
        Serial.print(touchReading);
       Serial.println("Correct");
@@ -353,12 +353,12 @@ String knockCheck(){
   sensorReading = analogRead(knockSensor);
  // Serial.println(sensorReading);
   delay(100);
-  // First determine is knock if Hard (HIGH) or Gentle (LOW)
+  // First determine is knock if Hard or Soft
  
-  //Hard knock (HIGH) is detected
+  //Hard knock is detected
   if (sensorReading >= thresholdHIGH) {
  
-    //Check to see if a Hard Knock matches the Secret Knock in the correct sequence.
+    //Check to see if a Hard Knock matches the passcode in the correct sequence.
     if (secretKnock[secretCounter] == 1) {
  
       //The Knock was correct, iterate the counter.
@@ -375,10 +375,10 @@ String knockCheck(){
     //Allow some time to pass before sampling again to ensure a clear signal.
     delay(100);
  
-    //Gentle knock (LOW) is detected
+    //Soft knock is detected
   } else if (sensorReading >= thresholdLOW) {
  
-    //Check to see if a Gentle Knock matches the Secret Knock in the correct sequence.
+    //Check to see if a Soft Knock matches the passcode in the correct sequence.
     if (secretKnock[secretCounter] == 0) {
  
       //The Knock was correct, iterate the counter.
@@ -449,7 +449,7 @@ void tilt() {
    // save the reading.
   last_knobTime = knobTime;
 }
-//blink(): a blink method
+//blink(): a blink method to see when there is data being transmitted
 void blink()
 {
   digitalWrite(led, HIGH);
