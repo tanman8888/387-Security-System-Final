@@ -67,7 +67,7 @@ void loop() {
     Serial.println("Found"); //"Found" prints if a message was recieved
   }
   Serial.println("Loop\n"); //"Loop" prints after a cycle of void loop() is completed
-  delay(500);
+  delay(500);   //This is needed to stay in sync with the receiving end
 }
 
 void touchLCD() {
