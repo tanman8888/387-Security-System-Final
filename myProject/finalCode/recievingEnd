@@ -2,7 +2,7 @@
 #include <VirtualWire.h> //for RF communication
 #include <LiquidCrystal.h>
 
-LiquidCrystal lcd(12,11,10,9,6,5);
+LiquidCrystal lcd(12,11,10,9,6,5);    //Declares the pins that the LCD will use
 
 const int buzzerPin = 3;
 
@@ -24,13 +24,13 @@ void setup()
   vw_set_rx_pin(recPin);
   vw_rx_start();
   
-  pinMode(ledPin, OUTPUT);
-    lcd.begin(16, 2);
+  pinMode(ledPin, OUTPUT);    //Sets the ledPin as an output
+  lcd.begin(16, 2);     //initializeds the LCD
    
-   lcd.clear();
-   lcd.write("Noone's at");
-   lcd.setCursor(0,1);
-   lcd.write("the door");
+   lcd.clear();   //You have to clear the LCD screan if you want to write over something
+   lcd.write("Noone's at"); //Write to the LCD
+   lcd.setCursor(0,1);    //It can only hold 16 characters long, so move to the second line
+   lcd.write("the door");   //Finish message
  
 }
 
