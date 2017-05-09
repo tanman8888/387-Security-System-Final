@@ -30,10 +30,8 @@ String knockResponse="nothing";
 // Use I2C, no reset pin!
 Adafruit_CAP1188 cap = Adafruit_CAP1188();
 volatile byte interrupt = 0;
-const int touchLength = 4; //How many knocks are in your secret touch
-const int touchLength2 = 4; //How many knocks are in your secret touch
-const int secretTouch[touchLength] = {1,8,4,2};
-const int userTouch[touchLength2]= {1,1,1,1};
+const int touchLength = 4; //How many touches are in your secret touch
+const int secretTouch[touchLength] = {1,8,4,2};  //touch passcode
 
 const int touch1 = 1;  // value to decide when the touch is detected
 const int touch2 = 8;  // value to decide when the touch is detected
