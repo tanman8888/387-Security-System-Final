@@ -45,26 +45,23 @@ void loop() {
       Serial.print(message[i]); //print the message
       Serial.print(" ");
       
-      if(message[i] == 2) {
-        touchLCD();
+      if(message[i] == 2) {   //Someone is trying the touch pass code
+        touchLCD();           //Call my method for touch entry, which writes to the LCD and buzzes the piezo
       }
-      if(message[i] == 3) {
-        knockLCD();
-      //  delay(100);
+      if(message[i] == 3) {   //Someone is knocking
+        knockLCD();           //Call my method for knock entry, which writes to the LCD and buzzes the piezo
       }
-        if(message[i] == 4) {
-        blink();
-        openLCD();
-      //  delay(100);
+        if(message[i] == 4) { //If someone successfully opens the door
+        blink();              //blink to indicate that it received a message. I had this in the methods for the other messages
+        openLCD();            //Call my method for successful entry, which writes to the LCD and buzzes the piezo
       }
-      if(message[i] == 5) {
-        breakInLCD();
-       // delay(100);
+      if(message[i] == 5) {   //If there is a break in!!
+        breakInLCD();         //Call my method for break in, which writes to the LCD and buzzes the piezo!
       }
-          if(message[i] == 6) {
-          noTone(buzzerPin);
-          lcd.clear();
-          lcd.print("All good");
+          if(message[i] == 6) {   //If the system is reset      
+          noTone(buzzerPin);      //Stop any buzzing that may still be going off. That is if the duration isn't through, but the system gets reset
+          lcd.clear();            //You have to clear the LCD screan if you want to write over something
+          lcd.print("All good");  //Print to the LCD that it's all good now
       }
     }
     Serial.println("Found"); //"Found" prints if a message was recieved
@@ -74,38 +71,37 @@ void loop() {
 }
 
 void touchLCD() {
-        lcd.clear();
-        blink();
-        lcd.print("Someone's trying");
-        lcd.setCursor(0,1);
-        lcd.print("the touch entry");
-        tone(buzzerPin,20,500);
+        lcd.clear();  //You have to clear the LCD screan if you want to write over something
+        blink();      //Blink to indicate that data was received
+        lcd.print("Someone's trying");   //Write to the LCD that someones touching the door
+        lcd.setCursor(0,1);             //It can only hold 16 characters long, so move to the second line
+        lcd.print("the touch entry");   //Finish the message
+        tone(buzzerPin,20,500);         //Buzz to get owners attention
 }
 
 void knockLCD() {
-        lcd.clear();
-        blink();
-        lcd.clear();
-        lcd.print("Someone's ");
-        lcd.setCursor(0,1);
-        lcd.write("knocking");
-        tone(buzzerPin,200,700);
+        lcd.clear();  //You have to clear the LCD screan if you want to write over something
+        blink();       //Blink to indicate that data was received
+        lcd.print("Someone's ");     //Write to the LCD that someones knocking
+        lcd.setCursor(0,1);     //It can only hold 16 characters long, so move to the second line
+        lcd.write("knocking");    //Finish message
+        tone(buzzerPin,200,700);    //Buzz speaker to get the users attention
 }
 
 void openLCD() {
-        lcd.clear();
-        lcd.print("Someone's opened");
-        lcd.setCursor(0,1);
-        lcd.print("the door");
-        tone(buzzerPin,200,50);
+        lcd.clear();    //You have to clear the LCD screan if you want to write over something
+        lcd.print("Someone's opened");  //Write to the LCD that someones entering successfully
+        lcd.setCursor(0,1);        //It can only hold 16 characters long, so move to the second line
+        lcd.print("the door");      //Finish message
+        tone(buzzerPin,200,50);     //Buzz speaker to get the users attention
 }
 
 void breakInLCD(){
-        blink();
-        lcd.clear();
-        lcd.print("BREAK IN");
-        lcd.setCursor(0,1);
-        tone(buzzerPin,255,1000);
+        blink();    //Blink LED to display that a data is received
+        lcd.clear();    //You have to clear the LCD screan if you want to write over something
+        lcd.print("BREAK IN");  //Write to the LCD that someones breaking in
+        lcd.setCursor(0,1);     
+        tone(buzzerPin,255,1000); //Buzz speaker to get the users attention
 }
 //blink(): a blink method
 void blink()
