@@ -1,5 +1,5 @@
+//RF was found from Ian Baker's wiki. Thanks Ian for letting me use your RF link. You saved me man.
 #include <VirtualWire.h> //for RF communication
-#include <SPI.h> //for Digital Potentiometer
 #include <LiquidCrystal.h>
 
 LiquidCrystal lcd(12,11,10,9,6,5);
