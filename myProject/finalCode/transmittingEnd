@@ -1,6 +1,7 @@
 // EVERYTHING WORKS HERE!!!!
 //Debugged
 //RF code was found from Ian Baker's midterm wiki at: https://github.com/baller4/ECE_387_Midterm_IB
+//Idea for knock detection: https://programmingelectronics.com/how-to-make-a-secret-knock-detector-to-trigger-anything-with-only-an-arduino-and-a-few-cheap-components/
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_CAP1188.h>
